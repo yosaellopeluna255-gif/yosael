@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen interactivo | Guerra del Pacífico</title>
+<style>
+  :root { color-scheme: light; --navy:#15345b; --blue:#245ca6; --bg:#f3f6fb; --ink:#182334; --muted:#5b6778; --green:#16794b; --red:#b42318; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Arial,Helvetica,sans-serif; background:linear-gradient(135deg,#e8effa,#f8fafc); color:var(--ink); }
+  header { background:var(--navy); color:white; padding:32px 18px; text-align:center; }
+  header h1 { margin:0 0 8px; font-size:clamp(1.5rem,4vw,2.2rem); }
+  header p { margin:0; color:#e2eaf7; }
+  main { max-width:900px; margin:24px auto; padding:0 14px 32px; }
+  .intro,.question,.results { background:white; border-radius:14px; padding:18px 20px; box-shadow:0 5px 18px #18365b12; margin-bottom:14px; }
+  .topline { display:flex; justify-content:space-between; align-items:center; gap:12px; color:var(--muted); font-size:.95rem; }
+  .bar { height:8px; background:#e6ebf2; border-radius:10px; overflow:hidden; margin-top:12px; }
+  .bar span { display:block; height:100%; width:0; background:var(--blue); transition:width .2s; }
+  .question h2 { font-size:1.05rem; line-height:1.45; margin:0 0 13px; }
+  .option { display:flex; align-items:flex-start; gap:10px; padding:11px 12px; border:1px solid #d9e0ea; border-radius:9px; margin:8px 0; cursor:pointer; line-height:1.35; }
+  .option:hover { background:#f5f8fd; border-color:#8aa9d5; }
+  .option input { margin-top:3px; accent-color:var(--blue); }
+  .option.correct { border-color:#6ab68f; background:#edf9f1; }
+  .option.wrong { border-color:#e49b95; background:#fff1f0; }
+  .feedback { font-size:.92rem; font-weight:bold; margin-top:9px; }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:22px 0; }
+  button { border:0; border-radius:10px; padding:12px 18px; font-weight:bold; font-size:1rem; cursor:pointer; }
+  .primary { background:var(--blue); color:white; }
+  .secondary { background:#e7edf6; color:var(--navy); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .results { text-align:center; }
+  .score { font-size:2.3rem; font-weight:bold; color:var(--navy); margin:8px; }
+  .hidden { display:none; }
+  footer { text-align:center; color:var(--muted); padding:0 12px 24px; font-size:.85rem; }
+  @media (min-width:700px) { .question { padding:22px 24px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Examen interactivo: Guerra del Pacífico</h1>
+  <p>Perú y Chile · 1879–1883 · Nivel tipo admisión</p>
+</header>
+<main>
+  <section class="intro">
+    <div class="topline"><strong>10 preguntas · 1 punto por respuesta correcta</strong><span id="progressText">0 de 10 respondidas</span></div>
+    <div class="bar"><span id="progressBar"></span></div>
+    <p>Selecciona una alternativa por pregunta y luego pulsa <b>Calificar examen</b> para conocer tu resultado y revisar las respuestas correctas.</p>
+  </section>
+  <div id="quiz"></div>
+  <div class="actions">
+    <button class="primary" id="gradeBtn">Calificar examen</button>
+    <button class="secondary" id="restartBtn">Volver a empezar</button>
+  </div>
+  <section id="results" class="results hidden" aria-live="polite"></section>
+</main>
+<footer>Material de práctica escolar. Revisa tus apuntes para ampliar la información histórica.</footer>
+<script>
+const questions = [
+ {q:"La causa inmediata que desencadenó la Guerra del Pacífico estuvo relacionada con:",o:["La invasión peruana de territorio chileno.","El conflicto entre Chile y Bolivia por los impuestos a la explotación del salitre.","La disputa entre Perú y Ecuador por la Amazonía.","La ocupación chilena de Lima."],a:1,why:"El conflicto por el impuesto boliviano a una compañía salitrera chilena fue el detonante inmediato; las causas fueron más amplias."},
+ {q:"El tratado secreto de alianza defensiva de 1873 fue firmado por:",o:["Perú y Chile.","Chile y Bolivia.","Perú y Bolivia.","Perú, Bolivia y Argentina."],a:2,why:"Perú y Bolivia firmaron el tratado de alianza defensiva en 1873."},
+ {q:"Al inicio de la Guerra del Pacífico, el presidente peruano era:",o:["Nicolás de Piérola.","Mariano Ignacio Prado.","Miguel Iglesias.","Andrés Avelino Cáceres."],a:1,why:"Mariano Ignacio Prado era presidente del Perú cuando comenzó la guerra en 1879."},
+ {q:"El Combate de Angamos, ocurrido el 8 de octubre de 1879, tuvo como consecuencia:",o:["La recuperación de Tarapacá.","La captura del Huáscar por Chile.","La firma del Tratado de Ancón.","La retirada chilena de Lima."],a:1,why:"La captura del Huáscar dio a Chile una ventaja importante en el control del mar. Miguel Grau murió durante el combate."},
+ {q:"¿Qué personaje peruano destacó por la defensa de Arica en 1880?",o:["Miguel Grau.","Francisco Bolognesi.","José Abelardo Quiñones.","Ramón Castilla."],a:1,why:"Francisco Bolognesi encabezó la defensa peruana de Arica."},
+ {q:"La campaña de la Breña se caracterizó por:",o:["La resistencia peruana en la sierra frente al ejército chileno.","La defensa naval del puerto del Callao.","La invasión peruana del territorio chileno.","La firma de la alianza entre Perú y Bolivia."],a:0,why:"La resistencia dirigida principalmente por Andrés Avelino Cáceres se desarrolló en la sierra peruana."},
+ {q:"¿Qué batallas de enero de 1881 permitieron la ocupación chilena de Lima?",o:["Tarapacá.","Arica.","San Juan y Miraflores.","Junín y Ayacucho."],a:2,why:"Las batallas de San Juan y Miraflores ocurrieron en enero de 1881, antes de la ocupación de Lima."},
+ {q:"¿Quién lideró principalmente la resistencia peruana en la campaña de la Breña?",o:["Mariano Ignacio Prado.","Andrés Avelino Cáceres.","Francisco Bolognesi.","Miguel Grau."],a:1,why:"Andrés Avelino Cáceres organizó una importante resistencia en la sierra."},
+ {q:"El Tratado de Ancón, firmado en 1883, estableció que:",o:["Chile devolvía inmediatamente Tarapacá al Perú.","Perú cedía Tarapacá a Chile.","Bolivia recibía el departamento de Lima.","Perú anexaba territorio chileno."],a:1,why:"Mediante el Tratado de Ancón, Perú cedió Tarapacá a Chile."},
+ {q:"Una consecuencia económica importante de la Guerra del Pacífico para el Perú fue:",o:["El fortalecimiento inmediato de sus finanzas públicas.","La desaparición de toda deuda externa.","La pérdida de territorios ricos en salitre y una grave crisis económica.","La industrialización inmediata del país."],a:2,why:"La guerra agravó la crisis económica peruana y el país perdió Tarapacá, una región rica en salitre."}
+];
+const letters=["A","B","C","D"];
+const quiz=document.getElementById("quiz");
+const results=document.getElementById("results");
+const gradeBtn=document.getElementById("gradeBtn");
+function render(){
+ quiz.innerHTML="";
+ questions.forEach((item,i)=>{
+  const section=document.createElement("section"); section.className="question"; section.id="q"+i;
+  const h=document.createElement("h2"); h.textContent=(i+1)+". "+item.q; section.appendChild(h);
+  item.o.forEach((option,j)=>{
+   const label=document.createElement("label"); label.className="option"; label.id=`opt-${i}-${j}`;
+   const input=document.createElement("input"); input.type="radio"; input.name="q"+i; input.value=j; input.addEventListener("change",updateProgress);
+   const span=document.createElement("span"); span.textContent=letters[j]+". "+option;
+   label.append(input,span); section.appendChild(label);
+  });
+  const feedback=document.createElement("div"); feedback.className="feedback"; feedback.id="feedback-"+i; section.appendChild(feedback);
+  quiz.appendChild(section);
+ });
+ updateProgress();
+}
+function updateProgress(){
+ const count=questions.filter((_,i)=>document.querySelector(`input[name="q${i}"]:checked`)).length;
+ document.getElementById("progressText").textContent=`${count} de 10 respondidas`;
+ document.getElementById("progressBar").style.width=(count*10)+"%";
+}
+gradeBtn.addEventListener("click",()=>{
+ let score=0, unanswered=0;
+ questions.forEach((item,i)=>{
+  const selected=document.querySelector(`input[name="q${i}"]:checked`);
+  if(!selected) unanswered++;
+  const correctLabel=document.getElementById(`opt-${i}-${item.a}`);
+  correctLabel.classList.add("correct");
+  if(selected){
+   if(Number(selected.value)===item.a) score++;
+   else document.getElementById(`opt-${i}-${selected.value}`).classList.add("wrong");
+  }
+  const fb=document.getElementById("feedback-"+i);
+  fb.style.color=selected && Number(selected.value)===item.a?"#16794b":"#b42318";
+  fb.textContent=(selected && Number(selected.value)===item.a?"¡Correcto! ":"Respuesta correcta: "+letters[item.a]+". ")+item.why;
+ });
+ const message=score>=9?"¡Excelente! Dominas muy bien el tema.":score>=7?"¡Buen trabajo! Repasa las preguntas que fallaste.":"Sigue practicando y repasa las causas, campañas, personajes y consecuencias.";
+ results.classList.remove("hidden");
+ results.innerHTML=`<h2>Tu resultado</h2><div class="score">${score}/10</div><p>${message}</p><p>Respuestas sin marcar: ${unanswered}</p>`;
+ gradeBtn.disabled=true;
+ results.scrollIntoView({behavior:"smooth",block:"center"});
+});
+document.getElementById("restartBtn").addEventListener("click",()=>{
+ render(); results.classList.add("hidden"); results.innerHTML=""; gradeBtn.disabled=false;
+ window.scrollTo({top:0,behavior:"smooth"});
+});
+render();
+</script>
+</body>
+</html>
